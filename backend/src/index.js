@@ -1,5 +1,9 @@
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
+mongoose.set('useCreateIndex', true);
+mongoose.set('useFindAndModify', false);
+
 const routes = require('./routes');
 
 const app = express();
@@ -13,6 +17,7 @@ mongoose.connect('mongodb+srv://Tiago:B2rz96wJEwnCttoB@cluster0-0tmdt.mongodb.ne
 
 //Todas as rotas entenderem json
 app.use(express.json());
+app.use(cors());
 app.use(routes);
 
 
