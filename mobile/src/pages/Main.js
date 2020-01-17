@@ -5,6 +5,7 @@ import { requestPermissionsAsync, getCurrentPositionAsync } from 'expo-location'
 import { MaterialIcons } from '@expo/vector-icons';
 
 import api from '../services/api';
+import { connect, disconnect, subscribeToNewDevs } from '../services/socket';
 
 function Main({ navigation }){
   const [devs, setDevs] = useState([]);
@@ -26,13 +27,17 @@ function Main({ navigation }){
           latitude,
           longitude,
           //Calculos Navais para obter o zoom dentro do mapa
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
+          latitudeDelta: 0.04,
+          longitudeDelta: 0.04,
         })
       }
     }
     loadInitialLocation();
   }, []);
+
+  useEffect(()=>{
+    subscribeToNewDevs(dev => setDevs([...devs, dev]));
+  },[devs])
 
   if (!currentRegion){
     return null
@@ -42,6 +47,19 @@ function Main({ navigation }){
     setCurrentRegion(region);
   }
 
+  //OnPress botão loadDevs
+  function setupWebsocket () {
+    //Sempre uma nova connect, por isso é necessário desconectar da anterior antes de fazer a nova
+    disconnect();
+
+    const { latitude, longitude } = currentRegion;
+    connect(
+      latitude,
+      longitude,
+      techs,
+    )
+  }
+
   async function loadDevs(){
     const { latitude, longitude } = currentRegion;
 
@@ -49,11 +67,14 @@ function Main({ navigation }){
       params: {
         latitude,
         longitude,
-        techs: "React Native"
+        techs: techs,
       }
     });
 
-    setDevs(response.data.devs)
+    setDevs(response.data.devs);
+
+    setupWebsocket();
+
   }
 
   return (
@@ -148,7 +169,7 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: '#fff',
     color: '#333',
-    borderRadius: 15,
+    borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 16,
     //shadow são de IOS
